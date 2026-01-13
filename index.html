@@ -1023,8 +1023,32 @@ function getMainKeyboard() {
 }
 
 // ==================== 工具函数 ====================
+// 转换为北京时间 (UTC+8)
+function toBeijingTime(date) {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  // 获取 UTC 时间戳，加上 8 小时偏移
+  const beijingOffset = 8 * 60 * 60 * 1000;
+  const utc = d.getTime() + (d.getTimezoneOffset() * 60 * 1000);
+  return new Date(utc + beijingOffset);
+}
+
+// 格式化日期为北京时间
+function formatBeijingDate(date, format = 'datetime') {
+  const d = toBeijingTime(date);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  if (format === 'date') {
+    return \`\${year}/\${month}/\${day}\`;
+  }
+  return \`\${month}/\${day} \${hours}:\${minutes}\`;
+}
+
 function getTodayDate() {
-  const now = new Date();
+  const now = toBeijingTime(new Date());
   return \`\${now.getFullYear()}/\${now.getMonth() + 1}/\${now.getDate()}\`;
 }
 
@@ -1366,8 +1390,7 @@ async function handleMailList(chatId, userId, query, pageToken, editMsgId, env) 
 
         let dateStr = '';
         try {
-          const d = new Date(getHeader('Date'));
-          dateStr = \`\${d.getMonth() + 1}/\${d.getDate()} \${String(d.getHours()).padStart(2, '0')}:\${String(d.getMinutes()).padStart(2, '0')}\`;
+          dateStr = formatBeijingDate(getHeader('Date'));
         } catch {}
 
         summaries.push({
@@ -1484,11 +1507,10 @@ async function handleMailDetail(chatId, userId, mailId, editMsgId, showFull, env
       fromName = from.replace(emailMatch[0], '').replace(/[<>"]/g, '').trim() || fromEmail;
     }
 
-    // 格式化日期
+    // 格式化日期为北京时间
     let dateStr = date;
     try {
-      const d = new Date(date);
-      dateStr = \`\${d.getMonth() + 1}/\${d.getDate()} \${String(d.getHours()).padStart(2, '0')}:\${String(d.getMinutes()).padStart(2, '0')}\`;
+      dateStr = formatBeijingDate(date);
     } catch {}
 
     // 提取内容
